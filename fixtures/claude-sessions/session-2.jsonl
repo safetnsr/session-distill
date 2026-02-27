@@ -1,0 +1,5 @@
+{"type":"message","message":{"role":"human","content":"always use typescript for this project"},"timestamp":"2026-02-26T09:00:00Z"}
+{"type":"message","message":{"role":"assistant","content":"using typescript as always."},"timestamp":"2026-02-26T09:00:01Z"}
+{"type":"message","message":{"role":"human","content":"deploy to vercel after build"},"timestamp":"2026-02-26T09:01:00Z"}
+{"type":"message","message":{"role":"human","content":"use git-ship to push commits"},"timestamp":"2026-02-26T09:02:00Z"}
+{"type":"message","message":{"role":"human","content":"we always use npm for package management"},"timestamp":"2026-02-26T09:03:00Z"}

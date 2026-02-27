@@ -1,0 +1,5 @@
+{"type":"message","message":{"role":"human","content":"remember to use typescript everywhere"},"timestamp":"2026-02-27T08:00:00Z"}
+{"type":"message","message":{"role":"assistant","content":"typescript it is."},"timestamp":"2026-02-27T08:00:01Z"}
+{"type":"message","message":{"role":"human","content":"use git-ship for all commits please"},"timestamp":"2026-02-27T08:01:00Z"}
+{"type":"message","message":{"role":"human","content":"deploy to vercel as usual"},"timestamp":"2026-02-27T08:02:00Z"}
+{"type":"message","message":{"role":"human","content":"our convention is npm publish as @safetnsr scope"},"timestamp":"2026-02-27T08:03:00Z"}

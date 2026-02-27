@@ -1,0 +1,7 @@
+{"type":"message","message":{"role":"human","content":"always use typescript for everything"},"timestamp":"2026-02-25T10:00:00Z"}
+{"type":"message","message":{"role":"assistant","content":"understood, I'll use typescript."},"timestamp":"2026-02-25T10:00:01Z"}
+{"type":"message","message":{"role":"human","content":"we use vercel for deployments. deploy to vercel when ready."},"timestamp":"2026-02-25T10:01:00Z"}
+{"type":"message","message":{"role":"assistant","content":"got it, deploying to vercel."},"timestamp":"2026-02-25T10:01:01Z"}
+{"type":"message","message":{"role":"human","content":"use git-ship for commits"},"timestamp":"2026-02-25T10:02:00Z"}
+{"type":"message","message":{"role":"human","content":"our stack is typescript and node with npm"},"timestamp":"2026-02-25T10:03:00Z"}
+{"type":"message","message":{"role":"human","content":"no, we use npm not pip"},"timestamp":"2026-02-25T10:04:00Z"}
