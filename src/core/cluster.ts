@@ -16,7 +16,7 @@ function jaccard(a: string, b: string): number {
   return union.size === 0 ? 0 : intersection.size / union.size;
 }
 
-export function clusterFacts(facts: Fact[], threshold = 0.6): FactCluster[] {
+export function clusterFacts(facts: Fact[], threshold = 0.6, minSessionCount = 2): FactCluster[] {
   const clusters: FactCluster[] = [];
 
   for (const fact of facts) {
@@ -68,8 +68,8 @@ export function clusterFacts(facts: Fact[], threshold = 0.6): FactCluster[] {
     }
   }
 
-  // filter clusters with sessionCount < 2
-  return clusters.filter(c => c.sessionCount >= 2);
+  // filter clusters below minSessionCount
+  return clusters.filter(c => c.sessionCount >= minSessionCount);
 }
 
 export { jaccard };

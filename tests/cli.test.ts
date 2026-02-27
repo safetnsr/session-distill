@@ -12,9 +12,9 @@ const CLI = path.join(PROJECT_ROOT, 'src', 'cli.js');
 const FIXTURE_DIR = path.resolve(PROJECT_ROOT, '..', 'fixtures');
 
 describe('cli', () => {
-  it('--version outputs 0.3.1', () => {
+  it('--version outputs 0.3.2', () => {
     const output = execSync(`node ${CLI} --version`, { encoding: 'utf-8' }).trim();
-    assert.strictEqual(output, '0.3.1');
+    assert.strictEqual(output, '0.3.2');
   });
 
   it('--help outputs usage', () => {

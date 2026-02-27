@@ -7,7 +7,7 @@ import { rankClusters } from './core/ranker';
 import { renderCLAUDEMD } from './core/renderer';
 import * as fs from 'fs';
 
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 const HELP = `
 session-distill — distill recurring context from AI agent sessions into CLAUDE.md
 
@@ -175,15 +175,15 @@ async function main(): Promise<void> {
   const sessionIds = new Set(messages.map(m => m.sessionId));
   const totalSessions = sessionIds.size;
 
+  const isStructuredMode = args.fromFiles && args.structured;
   const facts = extractFacts(messages);
-  const clusters = clusterFacts(facts);
+  const clusters = clusterFacts(facts, 0.6, isStructuredMode ? 1 : 2);
   const ranked = rankClusters(clusters, totalSessions);
 
   if (args.json) {
     const claudeMd = renderCLAUDEMD(ranked, totalSessions);
     // structured file mode: sessionCount is always 1 (synthetic sessions per section)
     // so skip the sessionCount >= 2 requirement — confidence alone is the signal
-    const isStructuredMode = args.fromFiles && args.structured;
     const filtered = isStructuredMode
       ? ranked.filter(r => r.confidence >= 0.6)
       : ranked.filter(r => r.confidence >= 0.6 && r.sessionCount >= 2);
