@@ -1,0 +1,24 @@
+{
+  "name": "@safetnsr/session-distill",
+  "version": "0.1.0",
+  "description": "distill recurring context from AI agent sessions into CLAUDE.md",
+  "bin": { "session-distill": "dist/cli.js" },
+  "main": "./dist/cli.js",
+  "files": ["dist/", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc -p tsconfig.test.json && node --test build/tests/*.test.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": ["ai", "claude", "agents", "context", "claude.md", "cli"],
+  "author": "safetnsr",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
