@@ -7,7 +7,7 @@ import { rankClusters } from './core/ranker';
 import { renderCLAUDEMD } from './core/renderer';
 import * as fs from 'fs';
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const HELP = `
 session-distill — distill recurring context from AI agent sessions into CLAUDE.md
 
@@ -23,19 +23,24 @@ options:
   --json              machine-readable output
   --all               scan all sessions (default: 20 most recent)
   --out <file>        write to file instead of stdout (default: stdout)
+  --from-files        read from stdin as file content
+  --structured        parse stdin as structured markdown (use with --from-files)
+  --json --out <file> write CLAUDE.md AND print JSON report (agent mode)
   --version, -v       show version
   --help, -h          show help
 
 examples:
   npx @safetnsr/session-distill                    # auto-detect, output to stdout
   npx @safetnsr/session-distill --out CLAUDE.md    # write directly to CLAUDE.md
+  npx @safetnsr/session-distill --json --out CLAUDE.md  # write + JSON report
   npx @safetnsr/session-distill --top 10           # show top 10 patterns
   npx @safetnsr/session-distill --diff             # preview changes
   cat chat.md | npx @safetnsr/session-distill      # pipe any chatlog
   cat AGENTS.md SOUL.md | npx @safetnsr/session-distill --from-files  # file-based fallback
+  cat AGENTS.md | npx @safetnsr/session-distill --from-files --structured  # structured markdown
 `;
 
-interface Args {
+export interface Args {
   adapter?: string;
   project?: string;
   top?: number;
@@ -45,17 +50,19 @@ interface Args {
   all: boolean;
   out?: string;
   fromFiles: boolean;
+  structured: boolean;
   version: boolean;
   help: boolean;
 }
 
-function parseArgs(argv: string[]): Args {
+export function parseArgs(argv: string[]): Args {
   const args: Args = {
     merge: false,
     diff: false,
     json: false,
     all: false,
     fromFiles: false,
+    structured: false,
     version: false,
     help: false,
   };
@@ -89,6 +96,9 @@ function parseArgs(argv: string[]): Args {
       case '--from-files':
         args.fromFiles = true;
         break;
+      case '--structured':
+        args.structured = true;
+        break;
       case '--version':
       case '-v':
         args.version = true;
@@ -101,6 +111,18 @@ function parseArgs(argv: string[]): Args {
   }
 
   return args;
+}
+
+function emptyJsonResponse(): string {
+  return JSON.stringify({
+    sessions_analyzed: 0,
+    no_sessions: true,
+    written: false,
+    path: null,
+    patterns: [],
+    filtered_patterns: [],
+    claude_md: '',
+  }, null, 2);
 }
 
 async function main(): Promise<void> {
@@ -129,13 +151,7 @@ async function main(): Promise<void> {
     const detected = await autoDetect(process.cwd());
     if (!detected) {
       if (args.json) {
-        console.log(JSON.stringify({
-          sessions_analyzed: 0,
-          no_sessions: true,
-          patterns: [],
-          filtered_patterns: [],
-          claude_md: '',
-        }, null, 2));
+        console.log(emptyJsonResponse());
         return;
       }
       console.error('no agent sessions found. try: cat AGENTS.md SOUL.md | npx @safetnsr/session-distill --from-files');
@@ -145,17 +161,11 @@ async function main(): Promise<void> {
     projectPath = args.project || detected.path;
   }
 
-  const messages = await loadMessages(adapter, projectPath, args.all);
+  const messages = await loadMessages(adapter, projectPath, args.all, args.structured);
 
   if (messages.length === 0) {
     if (args.json) {
-      console.log(JSON.stringify({
-        sessions_analyzed: 0,
-        no_sessions: true,
-        patterns: [],
-        filtered_patterns: [],
-        claude_md: '',
-      }, null, 2));
+      console.log(emptyJsonResponse());
       return;
     }
     console.error('no messages found in sessions.');
@@ -173,9 +183,28 @@ async function main(): Promise<void> {
     const claudeMd = renderCLAUDEMD(ranked, totalSessions);
     const filtered = ranked.filter(r => r.confidence >= 0.6 && r.sessionCount >= 2);
     const topPatterns = args.top ? ranked.slice(0, args.top) : ranked;
+
+    // If --out is also set, write file first
+    if (args.out) {
+      if (args.merge) {
+        let existing = '';
+        try {
+          existing = fs.readFileSync(args.out, 'utf-8');
+        } catch {
+          // no existing file
+        }
+        fs.writeFileSync(args.out, existing + '\n' + claudeMd);
+      } else {
+        fs.writeFileSync(args.out, claudeMd);
+      }
+    }
+
     console.log(JSON.stringify({
       sessions_analyzed: totalSessions,
       no_sessions: totalSessions === 0,
+      written: !!args.out,
+      path: args.out || null,
+      patterns_used: filtered.length,
       patterns: topPatterns.map(r => ({
         text: r.text,
         sessionCount: r.sessionCount,
@@ -245,7 +274,11 @@ async function main(): Promise<void> {
   console.log(claudeMd);
 }
 
-main().catch((err) => {
-  console.error(err.message || err);
-  process.exit(0); // always exit 0
-});
+// Guard main() so it doesn't run when require()'d in tests
+const isDirectRun = require.main === module;
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(err.message || err);
+    process.exit(0); // always exit 0
+  });
+}

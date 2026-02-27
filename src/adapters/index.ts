@@ -39,7 +39,8 @@ export async function autoDetect(cwd: string): Promise<DetectResult | null> {
 export async function loadMessages(
   adapter: string,
   projectPath: string,
-  all = false
+  all = false,
+  structured = false
 ): Promise<Message[]> {
   switch (adapter) {
     case 'claude-code':
@@ -49,7 +50,7 @@ export async function loadMessages(
     case 'markdown':
       return parseMarkdown(fs.readFileSync(projectPath, 'utf-8'), projectPath);
     case 'stdin':
-      return readStdin();
+      return readStdin(structured);
     default:
       throw new Error(`unknown adapter: ${adapter}`);
   }

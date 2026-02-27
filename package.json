@@ -1,6 +1,6 @@
 {
   "name": "@safetnsr/session-distill",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "distill recurring context from AI agent sessions into CLAUDE.md",
   "bin": { "session-distill": "dist/cli.js" },
   "main": "./dist/cli.js",

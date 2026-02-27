@@ -3,6 +3,8 @@ export interface Message {
   content: string;
   sessionId: string;
   timestamp?: string;
+  _structuredPattern?: string;
+  _structuredConfidence?: number;
 }
 
 export interface Fact {
@@ -42,6 +44,22 @@ export function extractFacts(messages: Message[]): Fact[] {
 
   for (const msg of messages) {
     if (msg.role !== 'human') continue;
+
+    // Handle structured mode messages (pre-classified)
+    if (msg._structuredPattern && msg._structuredConfidence) {
+      const key = `${msg.sessionId}:${msg.content}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        facts.push({
+          text: msg.content,
+          pattern: msg._structuredPattern as PatternType,
+          sessionId: msg.sessionId,
+          confidence: msg._structuredConfidence,
+          timestamp: msg.timestamp,
+        });
+      }
+      continue;
+    }
 
     const lines = msg.content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
