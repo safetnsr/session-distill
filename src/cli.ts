@@ -7,7 +7,7 @@ import { rankClusters } from './core/ranker';
 import { renderCLAUDEMD } from './core/renderer';
 import * as fs from 'fs';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const HELP = `
 session-distill — distill recurring context from AI agent sessions into CLAUDE.md
 
@@ -32,6 +32,7 @@ examples:
   npx @safetnsr/session-distill --top 10           # show top 10 patterns
   npx @safetnsr/session-distill --diff             # preview changes
   cat chat.md | npx @safetnsr/session-distill      # pipe any chatlog
+  cat AGENTS.md SOUL.md | npx @safetnsr/session-distill --from-files  # file-based fallback
 `;
 
 interface Args {
@@ -43,6 +44,7 @@ interface Args {
   json: boolean;
   all: boolean;
   out?: string;
+  fromFiles: boolean;
   version: boolean;
   help: boolean;
 }
@@ -53,6 +55,7 @@ function parseArgs(argv: string[]): Args {
     diff: false,
     json: false,
     all: false,
+    fromFiles: false,
     version: false,
     help: false,
   };
@@ -82,6 +85,9 @@ function parseArgs(argv: string[]): Args {
         break;
       case '--out':
         args.out = argv[++i];
+        break;
+      case '--from-files':
+        args.fromFiles = true;
         break;
       case '--version':
       case '-v':
@@ -113,13 +119,26 @@ async function main(): Promise<void> {
   let adapter: string;
   let projectPath: string;
 
-  if (args.adapter && args.project) {
+  if (args.fromFiles || (!process.stdin.isTTY && !args.adapter)) {
+    adapter = 'stdin';
+    projectPath = 'stdin';
+  } else if (args.adapter && args.project) {
     adapter = args.adapter;
     projectPath = args.project;
   } else {
     const detected = await autoDetect(process.cwd());
     if (!detected) {
-      console.error('no agent sessions found. use --adapter and --project to specify manually.');
+      if (args.json) {
+        console.log(JSON.stringify({
+          sessions_analyzed: 0,
+          no_sessions: true,
+          patterns: [],
+          filtered_patterns: [],
+          claude_md: '',
+        }, null, 2));
+        return;
+      }
+      console.error('no agent sessions found. try: cat AGENTS.md SOUL.md | npx @safetnsr/session-distill --from-files');
       return;
     }
     adapter = args.adapter || detected.adapter;
@@ -129,6 +148,16 @@ async function main(): Promise<void> {
   const messages = await loadMessages(adapter, projectPath, args.all);
 
   if (messages.length === 0) {
+    if (args.json) {
+      console.log(JSON.stringify({
+        sessions_analyzed: 0,
+        no_sessions: true,
+        patterns: [],
+        filtered_patterns: [],
+        claude_md: '',
+      }, null, 2));
+      return;
+    }
     console.error('no messages found in sessions.');
     return;
   }
@@ -142,14 +171,24 @@ async function main(): Promise<void> {
 
   if (args.json) {
     const claudeMd = renderCLAUDEMD(ranked, totalSessions);
+    const filtered = ranked.filter(r => r.confidence >= 0.6 && r.sessionCount >= 2);
     const topPatterns = args.top ? ranked.slice(0, args.top) : ranked;
     console.log(JSON.stringify({
       sessions_analyzed: totalSessions,
+      no_sessions: totalSessions === 0,
       patterns: topPatterns.map(r => ({
         text: r.text,
         sessionCount: r.sessionCount,
         totalSessions: r.totalSessions,
         confidence: r.confidence,
+        pattern: r.pattern,
+      })),
+      filtered_patterns: filtered.map(r => ({
+        text: r.text,
+        sessionCount: r.sessionCount,
+        totalSessions: r.totalSessions,
+        confidence: r.confidence,
+        pattern: r.pattern,
       })),
       claude_md: claudeMd,
     }, null, 2));
